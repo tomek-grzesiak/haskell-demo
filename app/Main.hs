@@ -1,79 +1,54 @@
-{-# LANGUAGE DefaultSignatures, DeriveGeneric, TypeOperators, FlexibleContexts #-}
+{-# LANGUAGE DefaultSignatures, DeriveGeneric, TypeOperators, TypeFamilies #-}
 
 import GHC.Generics
-import Data.Bits
 import Protolude hiding (put, get)
 
-data Bit = O | I deriving Show
+class Encrypt a where
+  enc :: a -> a
 
-class Serialize a where
-  put :: a -> [Bit]
+  default enc :: (Generic a, GEncrypt (Rep a), GEnc (Rep a) ~ Rep a) =>  a -> a
+  enc a = to $ genc (from a)
 
-  default put :: (Generic a, GSerialize (Rep a)) => a -> [Bit]
-  put a = gput (from a)
+class GEncrypt (f :: Type -> Type) where
+  type GEnc f :: Type -> Type
+  genc :: f a -> GEnc f a
 
-  get :: [Bit] -> (a, [Bit])
-
-  default get :: (Generic a, GSerialize (Rep a)) => [Bit] -> (a, [Bit])
-  get xs = (to x, xs')
-    where (x, xs') = gget xs
-
-class GSerialize f where
-  gput :: f a -> [Bit]
-  gget :: [Bit] -> (f a, [Bit])
-
--- | Unit: used for constructors without arguments
-instance GSerialize U1 where
-  gput U1 = []
-  gget xs = (U1, xs)
 
 -- | Products: encode multiple arguments to constructors
-instance (GSerialize a, GSerialize b) => GSerialize (a :*: b) where
-  gput (a :*: b) = gput a ++ gput b
-  gget xs = (a :*: b, xs'')
-    where (a, xs') = gget xs
-          (b, xs'') = gget xs'
+instance (GEncrypt a, GEncrypt b) => GEncrypt (a :*: b) where
+  type GEnc (a :*: b) = GEnc a :*: GEnc b
+  genc (a :*: b) = genc a :*: genc b
 
 -- | Sums: encode choice between constructors
-instance (GSerialize a, GSerialize b) => GSerialize (a :+: b) where
-  gput (L1 x) = O : gput x
-  gput (R1 x) = I : gput x
-  gget (O:xs) = (L1 x, xs')
-    where (x, xs') = gget xs
-  gget (I:xs) = (R1 x, xs')
-    where (x, xs') = gget xs
+instance (GEncrypt a, GEncrypt b) => GEncrypt (a :+: b) where
+  type GEnc (a :+: b) = GEnc a :+: GEnc b
+  genc (L1 x) = L1 $ genc x
+  genc (R1 x) = R1 $ genc x
 
 -- | Meta-information (constructor names, etc.)
-instance (GSerialize a) => GSerialize (M1 i c a) where
-  gput (M1 x) = gput x
-  gget xs = (M1 x, xs')
-    where (x, xs') = gget xs
-
+instance (GEncrypt a) => GEncrypt (M1 i c a) where
+  type GEnc (M1 i c a) = M1 i c (GEnc a)
+  genc (M1 x) = M1 $ genc x
 -- | Constants, additional parameters and recursion of kind *
-instance (Serialize a) => GSerialize (K1 i a) where
-  gput (K1 x) = put x
-  gget xs = (K1 x, xs')
-    where (x, xs') = get xs
+instance (Encrypt a) => GEncrypt (K1 i a) where
+  type GEnc(K1 i a) = K1 i a
+  genc (K1 x) = K1 $ enc x
 
-instance Serialize Bool where
-  put True = [I]
-  put False = [O]
-  get (I:xs) = (True, xs)
-  get (O:xs) = (False, xs)
 
 --
 -- Try it out. (Normally this would be in a separate module.)
 --
 
-data UserTree a = Node a (UserTree a) (UserTree a) | Leaf
+data Test = Test Int ByteString
   deriving (Generic, Show)
 
-instance (Serialize a) => Serialize (UserTree a)
+instance Encrypt Int where
+  enc = identity
 
-main = do
-  let xs = put True
-  print (fst . get $ xs :: Bool)
-  let ys = put (Leaf :: UserTree Bool)
-  print (fst . get $ ys :: UserTree Bool)
-  let zs = put (Node False Leaf Leaf :: UserTree Bool)
-  print (fst . get $ zs :: UserTree Bool)
+instance Encrypt ByteString where
+  enc x = ("enc" :: ByteString) <> x
+
+instance Encrypt Test
+
+main :: IO ()
+main = print . enc $ Test 1 "Tomek"
