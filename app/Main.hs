@@ -1,12 +1,12 @@
-{-# LANGUAGE DefaultSignatures, DeriveGeneric #-}
+{-# LANGUAGE DefaultSignatures #-}
+{-# LANGUAGE DeriveGeneric #-}
 
 import GHC.Generics
-import Protolude hiding (put, get)
+import Protolude hiding (get, put)
 
 class Encrypt a where
   enc :: a -> a
-
-  default enc :: (Generic a, GEncrypt (Rep a)) =>  a -> a
+  default enc :: (Generic a, GEncrypt (Rep a)) => a -> a
   enc a = to $ genc (from a)
 
 class GEncrypt f where
