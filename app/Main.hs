@@ -31,6 +31,12 @@ instance GEncrypt U1 where
 data Test = Test Int ByteString
   deriving (Generic, Show)
 
+data Test2 = Test2 {t1::  Int, t2:: ByteString }
+  deriving (Generic, Show)
+
+newtype Test3 = Test3 {unTest3 :: ByteString} 
+  deriving (Generic, Show)
+
 instance Encrypt Int where
   enc = identity
 
@@ -40,4 +46,21 @@ instance Encrypt ByteString where
 instance Encrypt Test
 
 main :: IO ()
-main = print . enc $ Test 1 "Tomek"
+main = do
+  print . from $ Test 1  ("":: ByteString)
+  print . from $ Test2 1 ("":: ByteString)
+  print . from $ Test3   ("":: ByteString)
+  print . from $ (Right 1 :: Either Int Int)
+  print . from $ ([] :: [Int])
+  print . from $ ()
+  print . from $ False
+  
+{-
+M1 {unM1 = M1 {unM1 = M1 {unM1 = K1 {unK1 = 1}} :*: M1 {unM1 = K1 {unK1 = ""}}}}
+M1 {unM1 = M1 {unM1 = M1 {unM1 = K1 {unK1 = 1}} :*: M1 {unM1 = K1 {unK1 = ""}}}}
+M1 {unM1 = M1 {unM1 = M1 {unM1 = K1 {unK1 = ""}}}}
+M1 {unM1 = R1 (M1 {unM1 = M1 {unM1 = K1 {unK1 = 1}}})}
+M1 {unM1 = L1 (M1 {unM1 = U1})}
+M1 {unM1 = M1 {unM1 = U1}}
+M1 {unM1 = L1 (M1 {unM1 = U1})}
+-}
