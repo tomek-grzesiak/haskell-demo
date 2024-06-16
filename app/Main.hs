@@ -48,19 +48,16 @@ instance Encrypt Test
 main :: IO ()
 main = do
   print . from $ Test 1  ("":: ByteString)
+-- M1 {unM1 = M1 {unM1 = M1 {unM1 = K1 {unK1 = 1}} :*: M1 {unM1 = K1 {unK1 = ""}}}}
   print . from $ Test2 1 ("":: ByteString)
+-- M1 {unM1 = M1 {unM1 = M1 {unM1 = K1 {unK1 = 1}} :*: M1 {unM1 = K1 {unK1 = ""}}}}
   print . from $ Test3   ("":: ByteString)
+-- M1 {unM1 = M1 {unM1 = M1 {unM1 = K1 {unK1 = ""}}}}
   print . from $ (Right 1 :: Either Int Int)
+-- M1 {unM1 = R1 (M1 {unM1 = M1 {unM1 = K1 {unK1 = 1}}})}
   print . from $ ([] :: [Int])
+-- M1 {unM1 = L1 (M1 {unM1 = U1})}
   print . from $ ()
+-- M1 {unM1 = M1 {unM1 = U1}}
   print . from $ False
-  
-{-
-M1 {unM1 = M1 {unM1 = M1 {unM1 = K1 {unK1 = 1}} :*: M1 {unM1 = K1 {unK1 = ""}}}}
-M1 {unM1 = M1 {unM1 = M1 {unM1 = K1 {unK1 = 1}} :*: M1 {unM1 = K1 {unK1 = ""}}}}
-M1 {unM1 = M1 {unM1 = M1 {unM1 = K1 {unK1 = ""}}}}
-M1 {unM1 = R1 (M1 {unM1 = M1 {unM1 = K1 {unK1 = 1}}})}
-M1 {unM1 = L1 (M1 {unM1 = U1})}
-M1 {unM1 = M1 {unM1 = U1}}
-M1 {unM1 = L1 (M1 {unM1 = U1})}
--}
+-- M1 {unM1 = L1 (M1 {unM1 = U1})}
