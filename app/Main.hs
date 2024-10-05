@@ -10,10 +10,10 @@ import Control.Monad.Reader.Has
 
 main :: IO ()
 main = do
-  -- void $ flip runReaderT Ctx2 $ runExceptT test3
-  print $ encode $ Err2 . Err1 $ "Hello, Haskell!"
+  res <-  flip runReaderT Ctx {ctx1 = Ctx1, ctx2 = Ctx2} $ runExceptT test3
+  print .  encode $ res 
 
-data Err1 = Err1 Text 
+newtype Err1 = Err1 Text 
     deriving (Generic, ToJSON, FromJSON)
     deriving TextShow  via FromGeneric  Err1
 
@@ -37,7 +37,7 @@ data Ctx2 = Ctx2
 
 
 test1 :: ExceptT Err2 (ReaderT Ctx IO) ()
-test1 = undefined
+test1 = throwError $ Err2 { err1 = Err1 "err" }
 
 class HasCtx
 
